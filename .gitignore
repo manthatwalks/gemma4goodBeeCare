@@ -1,0 +1,38 @@
+# Gradle
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+.DS_Store
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Local config
+local.properties
+
+# Kotlin
+.kotlin/
+
+# Keystore (never commit signing keys)
+*.jks
+*.keystore
+keystore.properties
+
+# Model files (downloaded at runtime — too large for git)
+*.litertlm
+*.tflite
+*.task
+*.bin
+app/src/main/assets/models/
+
+# OS
+Thumbs.db
+
+# Logs
+*.log
