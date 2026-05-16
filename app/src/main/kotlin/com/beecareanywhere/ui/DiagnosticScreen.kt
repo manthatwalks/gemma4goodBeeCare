@@ -16,6 +16,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Cancel
+import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Stop
@@ -47,7 +48,10 @@ import com.beecareanywhere.multimodal.rememberPermissionRequest
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DiagnosticScreen(viewModel: DiagnosticViewModel) {
+fun DiagnosticScreen(
+    viewModel: DiagnosticViewModel,
+    onOpenDownload: () -> Unit,
+) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val modelState by viewModel.modelState.collectAsStateWithLifecycle()
 
@@ -64,6 +68,9 @@ fun DiagnosticScreen(viewModel: DiagnosticViewModel) {
             TopAppBar(
                 title = { Text("BeeCare Anywhere") },
                 actions = {
+                    IconButton(onClick = onOpenDownload) {
+                        Icon(Icons.Default.Download, contentDescription = "Model download")
+                    }
                     IconButton(onClick = viewModel::resetConversation) {
                         Icon(Icons.Default.Refresh, contentDescription = "Reset")
                     }

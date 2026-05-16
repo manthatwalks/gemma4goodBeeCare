@@ -65,5 +65,9 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation("androidx.compose.material:material-icons-extended")
 
+    // Networking + storage — inline until promoted to libs.versions.toml
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
