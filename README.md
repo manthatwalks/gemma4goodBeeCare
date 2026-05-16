@@ -6,7 +6,7 @@ See [PLAN.md](./PLAN.md) for the full project plan, technical approach, and phas
 
 ## Status
 
-**Phase 1 — Buildable shell.** App compiles, installs, and launches to a Compose screen titled "BeeCare Anywhere". No model integration yet.
+**Stub demo shell.** The app builds, installs, and runs the end-to-end UI against `StubModel`: text input, photo capture, audio capture, streaming fake response, model download screen, settings, splash, and launcher icon. Real LiteRT-LM inference is intentionally deferred until the tuned E2B model exists.
 
 ## Build
 
@@ -42,6 +42,7 @@ echo "sdk.dir=$ANDROID_HOME" > local.properties
 
 ```sh
 ./gradlew assembleDebug             # produces app/build/outputs/apk/debug/app-debug.apk
+./gradlew lintDebug
 ./gradlew installDebug              # installs on a connected device (requires adb)
 ```
 
@@ -63,16 +64,22 @@ The Gradle wrapper is committed — no separate Gradle install needed.
 │   └── src/main/
 │       ├── AndroidManifest.xml
 │       ├── kotlin/com/beecareanywhere/
-│       │   ├── MainActivity.kt      # Compose entry point
-│       │   └── ui/theme/            # Material 3 theme
+│       │   ├── MainActivity.kt      # Compose entry point + manual routing
+│       │   ├── model/               # BeekeepingModel contract, StubModel, repository
+│       │   ├── multimodal/          # camera intent, AudioRecord, permissions
+│       │   ├── data/                # DataStore settings
+│       │   ├── di/                  # manual ServiceLocator
+│       │   └── ui/                  # diagnostic, download, settings screens
 │       └── res/                     # strings, themes, icons
+├── docs/MODEL_PIPELINE.md           # Unsloth -> litert-torch -> .litertlm
+├── training_data/kenya_bee_health/  # starter multimodal seed data
 ├── build.gradle.kts                 # root project
 ├── settings.gradle.kts
 ├── gradle.properties
 └── gradle/libs.versions.toml        # version catalog
 ```
 
-Phases 2 onward add `model/`, `multimodal/`, `data/`, and `di/` packages. See PLAN.md for the full structure.
+Phase 2 real model integration will add `LiteRtLmModel` and swap it in at `ServiceLocator.provideModel()`. See `docs/MODEL_PIPELINE.md` for the model handoff path.
 
 ## Repository
 

@@ -1,13 +1,19 @@
 package com.beecareanywhere.model
 
 import android.content.Context
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
+import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.io.File
+import java.io.IOException
 import java.security.MessageDigest
 
 /**
@@ -26,72 +32,100 @@ class ModelRepository(
     val modelsDir: File = File(context.filesDir, "models").apply { mkdirs() }
 
     fun installedModel(filename: String): File? {
-        val file = File(modelsDir, filename)
+        val file = modelFile(filename)
         return file.takeIf { it.exists() && it.length() > 0 }
     }
 
     fun delete(filename: String): Boolean {
-        return File(modelsDir, filename).delete()
+        val safeName = safeModelFilename(filename)
+        File(modelsDir, "$safeName.partial").delete()
+        return File(modelsDir, safeName).delete()
     }
 
     /**
      * Stream the download as a [DownloadState] Flow. Emits Downloading frequently (each buffer
      * chunk), then Verifying (if [expectedSha256] is provided), then Complete or Error.
      *
-     * The download writes to `<filename>.partial` and renames atomically on success — a crashed or
-     * cancelled download leaves only the `.partial` file behind.
+     * The download writes to `<filename>.partial` and renames atomically on success. Failed and
+     * cancelled downloads remove the partial file so later attempts start cleanly.
      */
     fun download(
         url: String,
         filename: String,
         expectedSha256: String? = null,
     ): Flow<DownloadState> = flow {
-        val outputFile = File(modelsDir, filename)
-        val tempFile = File(modelsDir, "$filename.partial")
+        val outputFile = modelFile(filename)
+        val tempFile = File(modelsDir, "${outputFile.name}.partial")
+        val normalizedSha = expectedSha256?.trim()?.takeIf { it.isNotEmpty() }
+        if (normalizedSha != null && !SHA_256_REGEX.matches(normalizedSha)) {
+            emit(DownloadState.Error("Pinned SHA-256 must be 64 hex characters"))
+            return@flow
+        }
         tempFile.delete()
 
-        val request = Request.Builder().url(url).build()
-        val response = httpClient.newCall(request).execute()
-        if (!response.isSuccessful) {
-            response.close()
-            emit(DownloadState.Error("HTTP ${response.code} ${response.message}"))
-            return@flow
+        val request = buildRequest(url)
+        val call = httpClient.newCall(request)
+        val coroutineContext = currentCoroutineContext()
+        val cancelHook = coroutineContext[Job]?.invokeOnCompletion { cause ->
+            if (cause is CancellationException) call.cancel()
         }
-
-        val body = response.body ?: run {
-            response.close()
-            emit(DownloadState.Error("Empty response body"))
-            return@flow
-        }
-
-        val total = body.contentLength()
-        var downloaded = 0L
-        val buf = ByteArray(BUFFER_BYTES)
 
         try {
-            body.byteStream().use { input ->
-                tempFile.outputStream().use { output ->
-                    while (true) {
-                        val read = input.read(buf)
-                        if (read == -1) break
-                        output.write(buf, 0, read)
-                        downloaded += read
-                        emit(DownloadState.Downloading(downloaded, total))
+            call.execute().use { response ->
+                if (!response.isSuccessful) {
+                    emit(DownloadState.Error("HTTP ${response.code} ${response.message}"))
+                    return@flow
+                }
+
+                val body = response.body ?: run {
+                    emit(DownloadState.Error("Empty response body"))
+                    return@flow
+                }
+
+                val total = body.contentLength()
+                var downloaded = 0L
+                val buf = ByteArray(BUFFER_BYTES)
+
+                body.byteStream().use { input ->
+                    tempFile.outputStream().use { output ->
+                        while (true) {
+                            coroutineContext.ensureActive()
+                            val read = input.read(buf)
+                            if (read == -1) break
+                            output.write(buf, 0, read)
+                            downloaded += read
+                            emit(DownloadState.Downloading(downloaded, total))
+                        }
                     }
                 }
+
+                if (total >= 0 && downloaded != total) {
+                    tempFile.delete()
+                    emit(DownloadState.Error("Download incomplete: expected $total bytes, got $downloaded"))
+                    return@flow
+                }
             }
-        } catch (e: Throwable) {
+        } catch (e: CancellationException) {
+            tempFile.delete()
+            throw e
+        } catch (e: IllegalArgumentException) {
+            tempFile.delete()
+            emit(DownloadState.Error(e.message ?: "Invalid download request"))
+            return@flow
+        } catch (e: IOException) {
             tempFile.delete()
             emit(DownloadState.Error(e.message ?: "Download failed"))
             return@flow
+        } finally {
+            cancelHook?.dispose()
         }
 
-        if (expectedSha256 != null) {
+        if (normalizedSha != null) {
             emit(DownloadState.Verifying)
             val actualSha = sha256(tempFile)
-            if (!actualSha.equals(expectedSha256, ignoreCase = true)) {
+            if (!actualSha.equals(normalizedSha, ignoreCase = true)) {
                 tempFile.delete()
-                emit(DownloadState.Error("SHA-256 mismatch: expected $expectedSha256, got $actualSha"))
+                emit(DownloadState.Error("SHA-256 mismatch: expected $normalizedSha, got $actualSha"))
                 return@flow
             }
         }
@@ -119,7 +153,28 @@ class ModelRepository(
         return digest.digest().joinToString("") { "%02x".format(it) }
     }
 
+    private fun buildRequest(url: String): Request {
+        val httpUrl = url.trim().toHttpUrlOrNull()
+            ?: throw IllegalArgumentException("Model URL is invalid")
+        require(httpUrl.isHttps) { "Model downloads must use HTTPS" }
+        return Request.Builder().url(httpUrl).build()
+    }
+
+    private fun modelFile(filename: String): File = File(modelsDir, safeModelFilename(filename))
+
+    private fun safeModelFilename(filename: String): String {
+        val safeName = filename.trim()
+        require(safeName == File(safeName).name) { "Model filename must not contain path separators" }
+        require(!safeName.contains('\\')) { "Model filename must not contain path separators" }
+        require(safeName != "." && safeName != "..") { "Model filename is invalid" }
+        require(safeName.endsWith(".litertlm", ignoreCase = true)) {
+            "Model filename must end with .litertlm"
+        }
+        return safeName
+    }
+
     companion object {
         private const val BUFFER_BYTES = 64 * 1024
+        private val SHA_256_REGEX = Regex("^[A-Fa-f0-9]{64}$")
     }
 }

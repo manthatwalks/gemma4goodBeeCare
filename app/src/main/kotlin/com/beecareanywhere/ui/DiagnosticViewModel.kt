@@ -54,6 +54,10 @@ class DiagnosticViewModel(
         _ui.update { it.copy(text = value) }
     }
 
+    fun showError(message: String) {
+        _ui.update { it.copy(error = message) }
+    }
+
     fun onImageCaptured(file: File?) {
         if (file == null) return
         _ui.value.capturedImage?.let(::deleteCaptureFile)
@@ -69,9 +73,12 @@ class DiagnosticViewModel(
     fun startAudioRecording(): Boolean {
         if (audioCapture != null) return false
         val rec = AudioCapture()
-        if (!rec.start()) return false
+        if (!rec.start()) {
+            _ui.update { it.copy(error = "Could not start microphone recording") }
+            return false
+        }
         audioCapture = rec
-        _ui.update { it.copy(isRecordingAudio = true) }
+        _ui.update { it.copy(isRecordingAudio = true, error = null) }
         return true
     }
 
@@ -79,7 +86,13 @@ class DiagnosticViewModel(
         val rec = audioCapture ?: return
         val bytes = rec.stop()
         audioCapture = null
-        _ui.update { it.copy(isRecordingAudio = false, capturedAudio = bytes) }
+        _ui.update {
+            if (bytes.isEmpty()) {
+                it.copy(isRecordingAudio = false, capturedAudio = null, error = "No audio was captured")
+            } else {
+                it.copy(isRecordingAudio = false, capturedAudio = bytes, error = null)
+            }
+        }
     }
 
     fun clearAudio() {

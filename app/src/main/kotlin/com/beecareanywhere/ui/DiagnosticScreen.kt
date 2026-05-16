@@ -59,10 +59,10 @@ fun DiagnosticScreen(
 
     val launchCamera = rememberImageCapture(onResult = viewModel::onImageCaptured)
     val requestCameraPermission = rememberPermissionRequest(Manifest.permission.CAMERA) { granted ->
-        if (granted) launchCamera()
+        if (granted) launchCamera() else viewModel.showError("Camera permission denied")
     }
     val requestMicPermission = rememberPermissionRequest(Manifest.permission.RECORD_AUDIO) { granted ->
-        if (granted) viewModel.startAudioRecording()
+        if (granted) viewModel.startAudioRecording() else viewModel.showError("Microphone permission denied")
     }
 
     Scaffold(

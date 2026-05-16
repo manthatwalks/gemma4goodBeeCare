@@ -33,7 +33,10 @@ private val DarkColors = darkColorScheme(
 @Composable
 fun BeeCareAnywhereTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = true,
+    // Force our honey palette. Material You (dynamic color) overrides the brand
+    // with the device wallpaper's tones, which looks generic. Opt-in later if we
+    // add a "match system colors" setting.
+    dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
     val colors = when {

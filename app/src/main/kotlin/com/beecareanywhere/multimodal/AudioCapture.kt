@@ -55,17 +55,30 @@ class AudioCapture {
             return false
         }
 
-        recorder = rec
         buffer.reset()
-        isRecording.set(true)
-        rec.startRecording()
+        try {
+            rec.startRecording()
+        } catch (_: IllegalStateException) {
+            rec.release()
+            return false
+        } catch (_: SecurityException) {
+            rec.release()
+            return false
+        }
 
+        recorder = rec
+        isRecording.set(true)
         thread = Thread {
             val chunk = ByteArray(minBuf)
             while (isRecording.get()) {
                 val read = rec.read(chunk, 0, chunk.size)
                 if (read > 0) {
-                    synchronized(buffer) { buffer.write(chunk, 0, read) }
+                    synchronized(buffer) {
+                        if (buffer.size() < MAX_CAPTURE_BYTES) {
+                            buffer.write(chunk, 0, read.coerceAtMost(MAX_CAPTURE_BYTES - buffer.size()))
+                        }
+                        if (buffer.size() >= MAX_CAPTURE_BYTES) isRecording.set(false)
+                    }
                 }
             }
         }.apply { name = "BeeCare-AudioCapture"; start() }
@@ -74,21 +87,21 @@ class AudioCapture {
 
     /** Stop recording and return the captured PCM bytes. Safe to call multiple times. */
     fun stop(): ByteArray {
-        if (!isRecording.compareAndSet(true, false)) {
-            return synchronized(buffer) { buffer.toByteArray() }
-        }
+        isRecording.set(false)
+        val rec = recorder
+        rec?.runCatching { stop() }
         thread?.join(STOP_TIMEOUT_MS)
         thread = null
-        recorder?.runCatching {
-            stop()
-            release()
-        }
+        rec?.release()
         recorder = null
         return synchronized(buffer) { buffer.toByteArray() }
     }
 
     companion object {
         private const val SAMPLE_RATE_HZ = 16_000
+        private const val BYTES_PER_SAMPLE = 2
+        private const val MAX_CAPTURE_SECONDS = 30
+        private const val MAX_CAPTURE_BYTES = SAMPLE_RATE_HZ * BYTES_PER_SAMPLE * MAX_CAPTURE_SECONDS
         private const val STOP_TIMEOUT_MS = 500L
     }
 }

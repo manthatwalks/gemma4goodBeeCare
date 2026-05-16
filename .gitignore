@@ -30,6 +30,7 @@ keystore.properties
 *.task
 *.bin
 app/src/main/assets/models/
+training_data/**/images/
 
 # OS
 Thumbs.db

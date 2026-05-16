@@ -31,20 +31,32 @@ fun rememberImageCapture(onResult: (File?) -> Unit): () -> Unit {
     val launcher = rememberLauncherForActivityResult(
         ActivityResultContracts.TakePicture(),
     ) { success ->
-        onResult(if (success) pendingFile else null)
+        val file = pendingFile
         pendingFile = null
+        if (success && file != null && file.length() > 0) {
+            onResult(file)
+        } else {
+            file?.let(::deleteCaptureFile)
+            onResult(null)
+        }
     }
 
     return {
         val file = createCaptureFile(context)
         pendingFile = file
-        launcher.launch(toContentUri(context, file))
+        runCatching {
+            launcher.launch(toContentUri(context, file))
+        }.onFailure {
+            pendingFile = null
+            deleteCaptureFile(file)
+            onResult(null)
+        }
     }
 }
 
 private fun createCaptureFile(context: Context): File {
     val dir = File(context.cacheDir, "captures").apply { mkdirs() }
-    return File(dir, "capture-${System.currentTimeMillis()}.jpg")
+    return File.createTempFile("capture-", ".jpg", dir)
 }
 
 private fun toContentUri(context: Context, file: File) = FileProvider.getUriForFile(

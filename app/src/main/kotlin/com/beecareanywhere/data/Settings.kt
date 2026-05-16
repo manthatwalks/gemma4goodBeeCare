@@ -56,10 +56,9 @@ class Settings(private val context: Context) {
         private val KEY_MODEL_URL = stringPreferencesKey("model_url")
         private val KEY_MODEL_SHA256 = stringPreferencesKey("model_sha256")
 
-        // Placeholders — final values land in Phase 4 once Apiary is uploaded to HF Hub.
-        // The URL follows the E2B naming convention; verify the live model card before relying
-        // on this URL (see PLAN.md Sources note).
-        const val DEFAULT_MODEL_FILENAME = "gemma-4-E2B-it-litert-lm.litertlm"
+        // Prebuilt E2B model used while Apiary fine-tuning/conversion is still in flight.
+        // The Apiary swap changes this filename, URL, and pinned SHA once the final model is uploaded.
+        const val DEFAULT_MODEL_FILENAME = "gemma-4-E2B-it.litertlm"
         const val DEFAULT_MODEL_URL =
             "https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/$DEFAULT_MODEL_FILENAME"
     }
