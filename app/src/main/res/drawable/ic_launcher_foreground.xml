@@ -4,8 +4,16 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Honeycomb hexagon — placeholder, refine in Phase 5 -->
+    <!-- Outer hexagon — dark hive brown -->
     <path
         android:fillColor="#5D3A1F"
-        android:pathData="M54,30 L74,42 L74,66 L54,78 L34,66 L34,42 Z" />
+        android:pathData="M54,28 L76,41 L76,67 L54,80 L32,67 L32,41 Z" />
+    <!-- Inner hexagon — pollen yellow -->
+    <path
+        android:fillColor="#FFD54F"
+        android:pathData="M54,40 L66,47 L66,61 L54,68 L42,61 L42,47 Z" />
+    <!-- Center hexagon — dark hive brown -->
+    <path
+        android:fillColor="#5D3A1F"
+        android:pathData="M54,48 L60,51.5 L60,58.5 L54,62 L48,58.5 L48,51.5 Z" />
 </vector>

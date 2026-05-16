@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Stop
 import androidx.compose.material.icons.outlined.Mic
 import androidx.compose.material3.AssistChip
@@ -51,6 +52,7 @@ import com.beecareanywhere.multimodal.rememberPermissionRequest
 fun DiagnosticScreen(
     viewModel: DiagnosticViewModel,
     onOpenDownload: () -> Unit,
+    onOpenSettings: () -> Unit,
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val modelState by viewModel.modelState.collectAsStateWithLifecycle()
@@ -70,6 +72,9 @@ fun DiagnosticScreen(
                 actions = {
                     IconButton(onClick = onOpenDownload) {
                         Icon(Icons.Default.Download, contentDescription = "Model download")
+                    }
+                    IconButton(onClick = onOpenSettings) {
+                        Icon(Icons.Default.Settings, contentDescription = "Settings")
                     }
                     IconButton(onClick = viewModel::resetConversation) {
                         Icon(Icons.Default.Refresh, contentDescription = "Reset")
