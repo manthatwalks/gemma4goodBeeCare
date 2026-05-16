@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Cancel
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.PhotoCamera
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Settings
@@ -56,28 +57,29 @@ fun DiagnosticScreen(
 ) {
     val ui by viewModel.ui.collectAsStateWithLifecycle()
     val modelState by viewModel.modelState.collectAsStateWithLifecycle()
+    val strings = strings(ui.language)
 
     val launchCamera = rememberImageCapture(onResult = viewModel::onImageCaptured)
     val requestCameraPermission = rememberPermissionRequest(Manifest.permission.CAMERA) { granted ->
-        if (granted) launchCamera() else viewModel.showError("Camera permission denied")
+        if (granted) launchCamera() else viewModel.showError(strings.cameraPermissionDenied)
     }
     val requestMicPermission = rememberPermissionRequest(Manifest.permission.RECORD_AUDIO) { granted ->
-        if (granted) viewModel.startAudioRecording() else viewModel.showError("Microphone permission denied")
+        if (granted) viewModel.startAudioRecording() else viewModel.showError(strings.microphonePermissionDenied)
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("BeeCare Anywhere") },
+                title = { Text(strings.appTitle) },
                 actions = {
                     IconButton(onClick = onOpenDownload) {
-                        Icon(Icons.Default.Download, contentDescription = "Model download")
+                        Icon(Icons.Default.Download, contentDescription = strings.modelDownload)
                     }
                     IconButton(onClick = onOpenSettings) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+                        Icon(Icons.Default.Settings, contentDescription = strings.settings)
                     }
                     IconButton(onClick = viewModel::resetConversation) {
-                        Icon(Icons.Default.Refresh, contentDescription = "Reset")
+                        Icon(Icons.Default.Refresh, contentDescription = strings.reset)
                     }
                 },
             )
@@ -90,13 +92,13 @@ fun DiagnosticScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            ModelStateBanner(modelState)
+            ModelStateBanner(modelState, strings)
 
             OutlinedTextField(
                 value = ui.text,
                 onValueChange = viewModel::updateText,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Describe what you're seeing in the hive…") },
+                placeholder = { Text(strings.textPlaceholder) },
                 minLines = 3,
                 maxLines = 5,
             )
@@ -106,7 +108,12 @@ fun DiagnosticScreen(
                 hasAudio = ui.capturedAudio != null,
                 onClearImage = viewModel::clearImage,
                 onClearAudio = viewModel::clearAudio,
+                strings = strings,
             )
+
+            if (ui.needsImageDescription) {
+                ImageClarificationCard(strings)
+            }
 
             CaptureControls(
                 isRecording = ui.isRecordingAudio,
@@ -121,6 +128,7 @@ fun DiagnosticScreen(
                     (ui.text.isNotBlank() || ui.capturedImage != null || ui.capturedAudio != null),
                 isGenerating = ui.isGenerating,
                 onCancelGeneration = viewModel::cancelGeneration,
+                strings = strings,
             )
 
             ResponseArea(
@@ -133,12 +141,38 @@ fun DiagnosticScreen(
 }
 
 @Composable
-private fun ModelStateBanner(state: ModelState) {
+private fun ImageClarificationCard(strings: UiStrings) {
+    Card(
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.secondaryContainer),
+        shape = RoundedCornerShape(8.dp),
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier.padding(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+        ) {
+            Icon(Icons.Default.Info, contentDescription = null)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = strings.describePhotoTitle,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    text = strings.describePhotoBody,
+                    style = MaterialTheme.typography.bodySmall,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun ModelStateBanner(state: ModelState, strings: UiStrings) {
     val (label, color) = when (state) {
-        ModelState.Idle -> "Model not loaded" to MaterialTheme.colorScheme.surfaceVariant
-        ModelState.Loading -> "Loading model…" to MaterialTheme.colorScheme.tertiaryContainer
-        ModelState.Ready -> "Model ready" to MaterialTheme.colorScheme.primaryContainer
-        is ModelState.Error -> "Model error: ${state.message}" to MaterialTheme.colorScheme.errorContainer
+        ModelState.Idle -> strings.modelNotLoaded to MaterialTheme.colorScheme.surfaceVariant
+        ModelState.Loading -> strings.loadingModel to MaterialTheme.colorScheme.tertiaryContainer
+        ModelState.Ready -> strings.modelReady to MaterialTheme.colorScheme.primaryContainer
+        is ModelState.Error -> "${strings.modelErrorPrefix}${state.message}" to MaterialTheme.colorScheme.errorContainer
     }
     Card(
         colors = CardDefaults.cardColors(containerColor = color),
@@ -167,21 +201,22 @@ private fun AttachmentsRow(
     hasAudio: Boolean,
     onClearImage: () -> Unit,
     onClearAudio: () -> Unit,
+    strings: UiStrings,
 ) {
     if (!hasImage && !hasAudio) return
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         if (hasImage) {
             AssistChip(
                 onClick = onClearImage,
-                label = { Text("Image attached") },
-                trailingIcon = { Icon(Icons.Default.Cancel, contentDescription = "Remove image") },
+                label = { Text(strings.imageAttached) },
+                trailingIcon = { Icon(Icons.Default.Cancel, contentDescription = strings.removeImage) },
             )
         }
         if (hasAudio) {
             AssistChip(
                 onClick = onClearAudio,
-                label = { Text("Audio attached") },
-                trailingIcon = { Icon(Icons.Default.Cancel, contentDescription = "Remove audio") },
+                label = { Text(strings.audioAttached) },
+                trailingIcon = { Icon(Icons.Default.Cancel, contentDescription = strings.removeAudio) },
             )
         }
     }
@@ -196,6 +231,7 @@ private fun CaptureControls(
     isSubmitEnabled: Boolean,
     isGenerating: Boolean,
     onCancelGeneration: () -> Unit,
+    strings: UiStrings,
 ) {
     Row(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -204,7 +240,7 @@ private fun CaptureControls(
         FilledTonalButton(onClick = onCameraClick) {
             Icon(Icons.Default.PhotoCamera, contentDescription = null)
             Spacer(Modifier.padding(4.dp))
-            Text("Photo")
+            Text(strings.photo)
         }
         FilledTonalButton(
             onClick = onMicClick,
@@ -221,12 +257,12 @@ private fun CaptureControls(
                 contentDescription = null,
             )
             Spacer(Modifier.padding(4.dp))
-            Text(if (isRecording) "Stop" else "Record")
+            Text(if (isRecording) strings.stop else strings.record)
         }
         Spacer(Modifier.weight(1f))
         if (isGenerating) {
             IconButton(onClick = onCancelGeneration) {
-                Icon(Icons.Default.Cancel, contentDescription = "Cancel")
+                Icon(Icons.Default.Cancel, contentDescription = strings.cancel)
             }
         }
         Button(
@@ -235,7 +271,7 @@ private fun CaptureControls(
         ) {
             Icon(Icons.AutoMirrored.Filled.Send, contentDescription = null)
             Spacer(Modifier.padding(4.dp))
-            Text("Diagnose")
+            Text(strings.diagnose)
         }
     }
 }

@@ -3,7 +3,10 @@ package com.beecareanywhere.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.beecareanywhere.data.Settings
+import com.beecareanywhere.model.BeekeepingKnowledgeBase
 import com.beecareanywhere.model.BeekeepingModel
+import com.beecareanywhere.model.DiagnosticPromptBuilder
 import com.beecareanywhere.model.ModelConfig
 import com.beecareanywhere.model.ModelState
 import com.beecareanywhere.multimodal.AudioCapture
@@ -19,6 +22,7 @@ import java.io.File
 
 class DiagnosticViewModel(
     private val model: BeekeepingModel,
+    private val settings: Settings,
 ) : ViewModel() {
 
     data class UiState(
@@ -29,6 +33,8 @@ class DiagnosticViewModel(
         val isGenerating: Boolean = false,
         val response: String = "",
         val error: String? = null,
+        val needsImageDescription: Boolean = false,
+        val language: Settings.Language = Settings.Language.English,
     )
 
     private val _ui = MutableStateFlow(UiState())
@@ -48,10 +54,20 @@ class DiagnosticViewModel(
                 ),
             )
         }
+        viewModelScope.launch {
+            settings.language.collect { language ->
+                _ui.update { it.copy(language = language) }
+            }
+        }
     }
 
     fun updateText(value: String) {
-        _ui.update { it.copy(text = value) }
+        _ui.update {
+            it.copy(
+                text = value,
+                needsImageDescription = if (value.isNotBlank()) false else it.needsImageDescription,
+            )
+        }
     }
 
     fun showError(message: String) {
@@ -61,12 +77,23 @@ class DiagnosticViewModel(
     fun onImageCaptured(file: File?) {
         if (file == null) return
         _ui.value.capturedImage?.let(::deleteCaptureFile)
-        _ui.update { it.copy(capturedImage = file) }
+        _ui.update {
+            it.copy(
+                capturedImage = file,
+                needsImageDescription = it.text.isBlank(),
+                response = if (it.text.isBlank()) {
+                    DiagnosticPromptBuilder.clarificationPrompt(it.language)
+                } else {
+                    it.response
+                },
+                error = null,
+            )
+        }
     }
 
     fun clearImage() {
         _ui.value.capturedImage?.let(::deleteCaptureFile)
-        _ui.update { it.copy(capturedImage = null) }
+        _ui.update { it.copy(capturedImage = null, needsImageDescription = false) }
     }
 
     /** Returns true if recording started. */
@@ -104,12 +131,36 @@ class DiagnosticViewModel(
         if (current.isGenerating) return
         if (current.text.isBlank() && current.capturedImage == null && current.capturedAudio == null) return
         if (modelState.value !is ModelState.Ready) return
+        if (current.capturedImage != null && current.text.isBlank()) {
+            _ui.update {
+                it.copy(
+                    needsImageDescription = true,
+                    response = DiagnosticPromptBuilder.clarificationPrompt(it.language),
+                    error = null,
+                )
+            }
+            return
+        }
+
+        val knowledge = BeekeepingKnowledgeBase.retrieve(
+            query = current.text,
+            language = current.language,
+            hasImage = current.capturedImage != null,
+            hasAudio = current.capturedAudio != null,
+        )
+        val diagnosticPrompt = DiagnosticPromptBuilder.build(
+            userText = current.text,
+            hasImage = current.capturedImage != null,
+            hasAudio = current.capturedAudio != null,
+            responseLanguage = current.language,
+            knowledge = knowledge,
+        )
 
         _ui.update { it.copy(isGenerating = true, response = "", error = null) }
         generationJob = viewModelScope.launch {
             try {
                 model.diagnose(
-                    text = current.text,
+                    text = diagnosticPrompt,
                     image = current.capturedImage,
                     audio = current.capturedAudio,
                 ).collect { token ->
@@ -151,11 +202,14 @@ class DiagnosticViewModel(
         super.onCleared()
     }
 
-    class Factory(private val model: BeekeepingModel) : ViewModelProvider.Factory {
+    class Factory(
+        private val model: BeekeepingModel,
+        private val settings: Settings,
+    ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass.isAssignableFrom(DiagnosticViewModel::class.java))
-            return DiagnosticViewModel(model) as T
+            return DiagnosticViewModel(model, settings) as T
         }
     }
 

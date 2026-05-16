@@ -1,0 +1,109 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BeeCare Kenya Production Training Record",
+  "type": "object",
+  "required": [
+    "record_id",
+    "dataset_status",
+    "split",
+    "modality",
+    "media",
+    "location_context",
+    "hive_context",
+    "labels",
+    "prompt",
+    "target_answer",
+    "review",
+    "provenance"
+  ],
+  "properties": {
+    "record_id": { "type": "string" },
+    "dataset_status": {
+      "type": "string",
+      "enum": ["pilot_seed", "public_resource_generated", "field_unreviewed", "field_reviewed", "production_approved", "excluded"]
+    },
+    "split": {
+      "type": "string",
+      "enum": ["train", "validation", "test", "holdout", "pilot", "unassigned"]
+    },
+    "modality": {
+      "type": "string",
+      "enum": ["image", "audio", "image_audio_text", "text_only"]
+    },
+    "media": {
+      "type": "object",
+      "required": ["image_path", "audio_path", "source_media_id"],
+      "properties": {
+        "image_path": { "type": ["string", "null"] },
+        "audio_path": { "type": ["string", "null"] },
+        "source_media_id": { "type": "string" },
+        "sha256": { "type": ["string", "null"] }
+      }
+    },
+    "location_context": {
+      "type": "object",
+      "required": ["country", "county", "region_type", "season_context"],
+      "properties": {
+        "country": { "type": "string" },
+        "county": { "type": ["string", "null"] },
+        "region_type": { "type": "string" },
+        "season_context": { "type": "string" },
+        "collection_date": { "type": ["string", "null"] }
+      }
+    },
+    "hive_context": {
+      "type": "object",
+      "required": ["hive_type", "bee_subspecies", "frame_removed", "inspection_context"],
+      "properties": {
+        "hive_type": { "type": "string" },
+        "bee_subspecies": { "type": "string" },
+        "frame_removed": { "type": ["boolean", "null"] },
+        "inspection_context": { "type": "string" }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "required": ["primary_condition", "secondary_conditions", "task", "severity", "confidence"],
+      "properties": {
+        "primary_condition": { "type": "string" },
+        "secondary_conditions": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "task": { "type": "string" },
+        "severity": { "type": "integer", "minimum": 0, "maximum": 3 },
+        "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+        "lab_confirmed": { "type": ["boolean", "null"] }
+      }
+    },
+    "prompt": { "type": "string" },
+    "target_answer": { "type": "string" },
+    "review": {
+      "type": "object",
+      "required": ["reviewer_role", "review_status", "safety_flags"],
+      "properties": {
+        "reviewer_role": { "type": "string" },
+        "review_status": {
+          "type": "string",
+          "enum": ["unreviewed", "single_reviewed", "double_reviewed", "expert_approved", "rejected"]
+        },
+        "safety_flags": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "notes": { "type": ["string", "null"] }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "required": ["source_type", "source_url", "license", "attribution", "consent_status"],
+      "properties": {
+        "source_type": { "type": "string" },
+        "source_url": { "type": ["string", "null"] },
+        "license": { "type": "string" },
+        "attribution": { "type": "string" },
+        "consent_status": { "type": "string" }
+      }
+    }
+  }
+}

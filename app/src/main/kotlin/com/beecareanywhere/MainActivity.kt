@@ -44,7 +44,10 @@ private fun BeeCareNavHost() {
     when (route) {
         Route.Diagnostic -> {
             val viewModel: DiagnosticViewModel = viewModel(
-                factory = DiagnosticViewModel.Factory(ServiceLocator.provideModel()),
+                factory = DiagnosticViewModel.Factory(
+                    model = ServiceLocator.provideModel(),
+                    settings = ServiceLocator.provideSettings(),
+                ),
             )
             DiagnosticScreen(
                 viewModel = viewModel,

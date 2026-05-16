@@ -1,0 +1,73 @@
+{
+  "version": "1.0",
+  "primary_conditions": [
+    "healthy_colony",
+    "healthy_resource_frame",
+    "heat_bearding",
+    "possible_swarming",
+    "drought_dearth_starvation_risk",
+    "possible_absconding",
+    "post_absconding_empty_hive",
+    "wax_moth_webbing",
+    "wax_moth_damage",
+    "small_hive_beetle_adults",
+    "small_hive_beetle_larvae",
+    "small_hive_beetle_slimeout",
+    "safari_ants_siafu",
+    "other_ants",
+    "varroa_visible",
+    "deformed_wing_virus",
+    "nosema_like_fecal_staining",
+    "queen_problem_suspected",
+    "weak_colony_unknown_cause",
+    "pesticide_misuse_risk",
+    "unknown_or_needs_more_information"
+  ],
+  "tasks": [
+    "visual_triage",
+    "audio_triage",
+    "multimodal_triage",
+    "differential_diagnosis",
+    "advice",
+    "counterfactual_safety",
+    "follow_up_questions"
+  ],
+  "severity": {
+    "0": "normal_or_no_action",
+    "1": "monitor_or_preventive_action",
+    "2": "action_needed_within_days",
+    "3": "urgent_action_same_day"
+  },
+  "hive_types": [
+    "langstroth",
+    "kenya_top_bar_hive",
+    "traditional_log_hive",
+    "warre",
+    "unknown"
+  ],
+  "modalities": [
+    "image",
+    "audio",
+    "image_audio_text",
+    "text_only"
+  ],
+  "safety_flags": [
+    "no_carbaryl",
+    "no_unapproved_insecticide_inside_hive",
+    "avoid_honey_contamination",
+    "food_safety_warning",
+    "registered_treatment_only",
+    "follow_label_and_extension_advice",
+    "avoid_false_swarm_alarm",
+    "single_image_limit",
+    "urgent_inspection",
+    "collect_more_evidence"
+  ],
+  "answer_requirements": [
+    "State uncertainty when one image/audio clip is insufficient.",
+    "Mention immediate action when severity is 2 or 3.",
+    "Avoid recommending Sevin, Carbaryl, engine oil inside hives, or unapproved insecticides in brood/comb areas.",
+    "Give Kenya-relevant advice only when it is supported by the record context.",
+    "Ask for follow-up photos/audio when diagnosis depends on missing evidence."
+  ]
+}

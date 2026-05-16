@@ -1,0 +1,116 @@
+{
+  "purpose": "Source manifest for Kenya bee-health multimodal Q/A training data.",
+  "source_review_date": "2026-05-16",
+  "recommended_datasets": [
+    {
+      "name": "TensorFlow Datasets bee_dataset / BeeAlarmed BeeDataset",
+      "use_for": ["varroa visual labels", "cooling behavior", "pollen packets", "bee vs wasp distinction"],
+      "url": "https://www.tensorflow.org/datasets/catalog/bee_dataset",
+      "notes": "Useful for single-bee and cooling labels, but not Kenya-specific and not enough for frame-level diagnosis."
+    },
+    {
+      "name": "VarroaDataset",
+      "use_for": ["varroa infected vs healthy bee images", "object-detection pretraining"],
+      "url": "https://zenodo.org/records/4085044",
+      "license": "CC BY 4.0",
+      "notes": "13,509 samples, with train/test/validation splits."
+    },
+    {
+      "name": "Queenless honeybee acoustic patterns",
+      "use_for": ["queenright vs queenless audio baselines", "spectrogram pretraining"],
+      "url": "https://data.mendeley.com/datasets/t9prmbmdfn/1",
+      "license": "CC BY 4.0",
+      "notes": "4 kHz, 30-second samples from five colonies. Not a starvation/dearth dataset."
+    },
+    {
+      "name": "BeeTogether / OSBH / NuHive audio datasets",
+      "use_for": ["queen presence", "swarming", "bee presence", "audio robustness"],
+      "url": "https://www.mdpi.com/1424-8220/24/18/6067",
+      "notes": "Use to broaden audio states, then collect Kenyan ASAL dearth/absconding audio."
+    },
+    {
+      "name": "Honey bee colony losses in nine Sub-Saharan African countries",
+      "use_for": ["Kenya loss-prior labels", "regional risk weighting", "taxonomy of reported causes"],
+      "url": "https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0322489",
+      "notes": "Use as context for why drought, absconding, pests, queen problems, and beekeeper-controllable factors matter in Kenya."
+    },
+    {
+      "name": "Wikimedia Commons / Bugwood/IPMImages",
+      "use_for": ["license-checkable seed images for rare visible conditions"],
+      "url": "https://commons.wikimedia.org/",
+      "notes": "Good for seed examples and demos. Do not rely on it as the production distribution."
+    }
+  ],
+  "seed_image_sources": [
+    {
+      "id": "img_healthy_langstroth_honey_frame",
+      "condition": "healthy_or_resource_frame",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Italian_honeybee_honey_frame_from_Langstroth_hive.jpg",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Italian_honeybee_honey_frame_from_Langstroth_hive.jpg",
+      "license": "CC BY-SA 4.0 or GFDL",
+      "attribution": "Benlisquare / Wikimedia Commons"
+    },
+    {
+      "id": "img_bearding",
+      "condition": "bearding_heat_stress",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Bees_bearding.JPG",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bees_bearding.JPG",
+      "license": "Public domain",
+      "attribution": "Shoefly / Wikimedia Commons"
+    },
+    {
+      "id": "img_wax_moth_webbing",
+      "condition": "wax_moth_webbing",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Wachsmottengespinst.JPG",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Wachsmottengespinst.JPG",
+      "license": "See Wikimedia Commons file page before redistribution",
+      "attribution": "Wikimedia Commons contributor listed on file page"
+    },
+    {
+      "id": "img_wax_moth_damage",
+      "condition": "wax_moth_damage",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Schadbild_der_Wachmotte.jpg",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Schadbild_der_Wachmotte.jpg",
+      "license": "See Wikimedia Commons file page before redistribution",
+      "attribution": "Wikimedia Commons contributor listed on file page"
+    },
+    {
+      "id": "img_small_hive_beetle_larvae",
+      "condition": "small_hive_beetle",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Aethina_tumida_5025044.jpg",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Aethina_tumida_5025044.jpg",
+      "license": "CC BY 3.0 US",
+      "attribution": "James D. Ellis, University of Florida / Bugwood.org"
+    },
+    {
+      "id": "img_safari_ants_kenya",
+      "condition": "safari_ants_siafu",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Safari_Ants_-_Kakamega-Forest_Kenya.jpg",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Safari_Ants_-_Kakamega-Forest_Kenya.jpg",
+      "license": "CC BY 3.0",
+      "attribution": "Bartolucci / Wikimedia Commons"
+    },
+    {
+      "id": "img_dwv_varroa",
+      "condition": "deformed_wing_virus_varroa",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Honey_bee_with_Deformed_Wing_Virus_and_Varroa_destructor.jpg",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Honey_bee_with_Deformed_Wing_Virus_and_Varroa_destructor.jpg",
+      "license": "CC0 1.0",
+      "attribution": "Stefan de Konink / Wikimedia Commons"
+    },
+    {
+      "id": "img_dwv_worker",
+      "condition": "deformed_wing_virus",
+      "source_url": "https://commons.wikimedia.org/wiki/File:Deformed_Wing_Virus_in_worker_bee.JPG",
+      "download_url": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Deformed_Wing_Virus_in_worker_bee.JPG",
+      "license": "CC BY-SA 3.0",
+      "attribution": "Xolani90 / Wikimedia Commons"
+    }
+  ],
+  "known_gaps": [
+    "Kenyan ASAL starvation/dearth acoustic labels are sparse in public datasets.",
+    "Nosema-like fecal streaking images need locally licensed photos and lab-confirmed labels.",
+    "Bearding vs true pre-swarming requires inspection metadata, not entrance images alone.",
+    "Local treatment labels must be reviewed by Kenyan apiculture extension experts before production use."
+  ]
+}

@@ -42,16 +42,17 @@ fun SettingsScreen(
     onBack: () -> Unit,
 ) {
     val language by viewModel.language.collectAsStateWithLifecycle(initialValue = Settings.Language.English)
+    val strings = strings(language)
     val modelInfo by viewModel.modelInfo.collectAsStateWithLifecycle()
     var showDeleteDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(strings.settings) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = strings.back)
                     }
                 },
             )
@@ -68,14 +69,16 @@ fun SettingsScreen(
             LanguageSection(
                 selected = language,
                 onSelect = viewModel::setLanguage,
+                strings = strings,
             )
             HorizontalDivider()
             ModelSection(
                 info = modelInfo,
                 onDelete = { showDeleteDialog = true },
+                strings = strings,
             )
             HorizontalDivider()
-            AboutSection()
+            AboutSection(strings)
         }
     }
 
@@ -86,6 +89,7 @@ fun SettingsScreen(
                 showDeleteDialog = false
             },
             onDismiss = { showDeleteDialog = false },
+            strings = strings,
         )
     }
 }
@@ -94,11 +98,16 @@ fun SettingsScreen(
 private fun LanguageSection(
     selected: Settings.Language,
     onSelect: (Settings.Language) -> Unit,
+    strings: UiStrings,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Response language", style = MaterialTheme.typography.titleMedium)
+        Text(strings.responseLanguage, style = MaterialTheme.typography.titleMedium)
         Text(
-            "What language the model responds in. UI labels stay English.",
+            strings.responseLanguageDescription,
+            style = MaterialTheme.typography.bodySmall,
+        )
+        Text(
+            strings.uiLanguageDescription,
             style = MaterialTheme.typography.bodySmall,
         )
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -117,9 +126,10 @@ private fun LanguageSection(
 private fun ModelSection(
     info: SettingsViewModel.ModelInfo?,
     onDelete: () -> Unit,
+    strings: UiStrings,
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Model", style = MaterialTheme.typography.titleMedium)
+        Text(strings.model, style = MaterialTheme.typography.titleMedium)
         Card(modifier = Modifier.fillMaxWidth()) {
             Column(
                 modifier = Modifier.padding(16.dp),
@@ -127,38 +137,38 @@ private fun ModelSection(
             ) {
                 val i = info
                 if (i == null) {
-                    Text("Loading…", style = MaterialTheme.typography.bodyMedium)
+                    Text(strings.loading, style = MaterialTheme.typography.bodyMedium)
                 } else {
-                    KeyValue("Filename", i.filename)
-                    KeyValue("Installed", if (i.installed) "yes" else "no")
+                    KeyValue(strings.filename, i.filename)
+                    KeyValue(strings.installed, if (i.installed) strings.yes else strings.no)
                     if (i.installed) {
-                        KeyValue("Size", formatBytes(i.sizeBytes))
-                        KeyValue("Path", i.path ?: "—")
+                        KeyValue(strings.size, formatBytes(i.sizeBytes))
+                        KeyValue(strings.path, i.path ?: "-")
                     }
-                    KeyValue("Pinned SHA-256", i.sha256 ?: "(none — verification skipped)")
+                    KeyValue(strings.pinnedSha, i.sha256 ?: strings.noneVerificationSkipped)
                 }
             }
         }
         AssistChip(
             onClick = {},
-            label = { Text("Stub model active — Phase 2 swaps in LiteRT-LM") },
+            label = { Text(strings.stubModelActive) },
         )
         OutlinedButton(
             onClick = onDelete,
             enabled = info?.installed == true,
         ) {
             Icon(Icons.Default.DeleteForever, contentDescription = null)
-            Text("Delete model file", modifier = Modifier.padding(start = 8.dp))
+            Text(strings.deleteModelFile, modifier = Modifier.padding(start = 8.dp))
         }
     }
 }
 
 @Composable
-private fun AboutSection() {
+private fun AboutSection(strings: UiStrings) {
     Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Text("About", style = MaterialTheme.typography.titleMedium)
-        KeyValue("Version", "0.1.0")
-        KeyValue("Repository", "github.com/manthatwalks/gemma4goodBeeCare")
+        Text(strings.about, style = MaterialTheme.typography.titleMedium)
+        KeyValue(strings.version, "0.1.0")
+        KeyValue(strings.repository, "github.com/manthatwalks/gemma4goodBeeCare")
     }
 }
 
@@ -174,16 +184,17 @@ private fun KeyValue(label: String, value: String) {
 private fun DeleteConfirmation(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    strings: UiStrings,
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Delete model file?") },
-        text = { Text("You'll need to download the model again before running diagnostics.") },
+        title = { Text(strings.deleteModelTitle) },
+        text = { Text(strings.deleteModelBody) },
         confirmButton = {
-            TextButton(onClick = onConfirm) { Text("Delete") }
+            TextButton(onClick = onConfirm) { Text(strings.delete) }
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text(strings.cancel) }
         },
     )
 }
