@@ -2,6 +2,7 @@ package com.beecareanywhere.di
 
 import android.app.Application
 import android.content.Context
+import com.beecareanywhere.data.CheckInRepository
 import com.beecareanywhere.data.Settings
 import com.beecareanywhere.model.BeekeepingModel
 import com.beecareanywhere.model.ModelRepository
@@ -42,10 +43,12 @@ object ServiceLocator {
         ModelRepository(context(), httpClient)
     }
     private val settingsInstance: Settings by lazy { Settings(context()) }
+    private val checkInRepositoryInstance: CheckInRepository by lazy { CheckInRepository(context()) }
 
     fun provideModel(): BeekeepingModel = modelInstance
     fun provideModelRepository(): ModelRepository = repositoryInstance
     fun provideSettings(): Settings = settingsInstance
+    fun provideCheckInRepository(): CheckInRepository = checkInRepositoryInstance
 
     private const val CONNECT_TIMEOUT_SEC = 30L
     private const val READ_TIMEOUT_SEC = 60L
